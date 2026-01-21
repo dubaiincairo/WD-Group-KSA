@@ -1,5 +1,5 @@
 {
-    'name': 'Odoo 19 Accounting Financial Reports',
+    'name': 'eZee Integration',
     'version': '1.0.2',
     'category': 'Invoicing Management',
     'description': 'Accounting Reports For Odoo 19, Accounting Financial Reports, '
