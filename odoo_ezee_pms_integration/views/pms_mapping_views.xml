@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Account Mapping -->
+    <record id="view_pms_account_mapping_tree" model="ir.ui.view">
+        <field name="name">pms.account.mapping.tree</field>
+        <field name="model">pms.account.mapping</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="hotel_id"/>
+                <field name="pms_account_id"/>
+                <field name="pms_account_name"/>
+                <field name="account_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_pms_account_mapping" model="ir.actions.act_window">
+        <field name="name">Account Mapping</field>
+        <field name="res_model">pms.account.mapping</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Tax Mapping -->
+    <record id="view_pms_tax_mapping_tree" model="ir.ui.view">
+        <field name="name">pms.tax.mapping.tree</field>
+        <field name="model">pms.tax.mapping</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="hotel_id"/>
+                <field name="pms_tax_id"/>
+                <field name="pms_tax_name"/>
+                <field name="tax_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_pms_tax_mapping" model="ir.actions.act_window">
+        <field name="name">Tax Mapping</field>
+        <field name="res_model">pms.tax.mapping</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Payment Mapping -->
+    <record id="view_pms_payment_mapping_tree" model="ir.ui.view">
+        <field name="name">pms.payment.mapping.tree</field>
+        <field name="model">pms.payment.mapping</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="hotel_id"/>
+                <field name="pms_payment_type"/>
+                <field name="journal_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_pms_payment_mapping" model="ir.actions.act_window">
+        <field name="name">Payment Mapping</field>
+        <field name="res_model">pms.payment.mapping</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

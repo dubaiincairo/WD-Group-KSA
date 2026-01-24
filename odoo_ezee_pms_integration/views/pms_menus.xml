@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_pms_integration_root"
+              name="PMS Integration"
+              parent="account.menu_finance_configuration"
+              sequence="100"/>
+
+    <menuitem id="menu_pms_credentials"
+              name="PMS Credentials"
+              parent="menu_pms_integration_root"
+              action="action_pms_credentials"
+              sequence="10"/>
+
+    <menuitem id="menu_pms_mapping_root"
+              name="Mappings"
+              parent="menu_pms_integration_root"
+              sequence="20"/>
+
+    <menuitem id="menu_pms_account_mapping"
+              name="Account Mapping"
+              parent="menu_pms_mapping_root"
+              action="action_pms_account_mapping"
+              sequence="10"/>
+
+    <menuitem id="menu_pms_tax_mapping"
+              name="Tax Mapping"
+              parent="menu_pms_mapping_root"
+              action="action_pms_tax_mapping"
+              sequence="20"/>
+
+    <menuitem id="menu_pms_payment_mapping"
+              name="Payment Mapping"
+              parent="menu_pms_mapping_root"
+              action="action_pms_payment_mapping"
+              sequence="30"/>
+
+    <menuitem id="menu_pms_sync_log"
+              name="Sync Logs"
+              parent="menu_pms_integration_root"
+              action="action_pms_sync_log"
+              sequence="40"/>
+              
+    <menuitem id="menu_pms_sync_wizard"
+              name="Manual Sync"
+              parent="menu_pms_integration_root"
+              action="action_pms_sync_wizard"
+              sequence="100"/>
+</odoo>
+<!-- parent="account.menu_finance_entries" -->

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Real Hotel Credentials from eZee PMS -->
+    
+    <record id="hotel_swissblue_jazan" model="pms.credentials">
+        <field name="name">SwissBlue Apartment Hotel Jazan</field>
+        <field name="hotel_code">59557</field>
+        <field name="username">Abdalla Hassan Elfouly</field>
+        <field name="password">Aa@12345</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="hotel_tulip_alrawdah" model="pms.credentials">
+        <field name="name">Tulip Alrawdah Serviced Apartments</field>
+        <field name="hotel_code">59207</field>
+        <field name="username">Abdalla Hassan Elfouly</field>
+        <field name="password">Aa@12345</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="hotel_vinas_riyadh" model="pms.credentials">
+        <field name="name">Vinas Riyadh Serviced Apartments</field>
+        <field name="hotel_code">59208</field>
+        <field name="username">Abdalla Hassan Elfouly</field>
+        <field name="password">Aa@12345</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="hotel_swissblue_alzahraa" model="pms.credentials">
+        <field name="name">SwissBlue Serviced Apartments Alzahraa District</field>
+        <field name="hotel_code">59081</field>
+        <field name="username">Abdalla Hassan Elfouly</field>
+        <field name="password">Aa@12345</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="hotel_swissblue_alsamer" model="pms.credentials">
+        <field name="name">SwissBlue Serviced Apartments Alsamer District</field>
+        <field name="hotel_code">59068</field>
+        <field name="username">Abdalla Hassan Elfouly</field>
+        <field name="password">Aa@12345</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="hotel_swissblue_jeddah" model="pms.credentials">
+        <field name="name">SwissBlue Hotel Jeddah</field>
+        <field name="hotel_code">22888</field>
+        <field name="username">Abdalla Hassan Elfouly</field>
+        <field name="password">Aa@12345</field>
+        <field name="active" eval="True"/>
+    </record>
+
+</odoo>

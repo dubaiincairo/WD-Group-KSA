@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pms_sync_wizard_form" model="ir.ui.view">
+        <field name="name">pms.sync.wizard.form</field>
+        <field name="model">pms.sync.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <label for="hotel_ids" string="Hotels"/>
+                    <field name="hotel_ids" widget="many2many_tags"/>
+                    <group col="2">
+                        <field name="from_date"/>
+                        <field name="to_date"/>
+                    </group>
+                </group>
+                <group string="Sync Options">
+                    <group>
+                        <field name="sync_sales"/>
+                        <field name="sync_receipts"/>
+                        <field name="sync_incidentals"/>
+                    </group>
+                    <group>
+                        <field name="sync_payments"/>
+                        <field name="sync_journals"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_sync" string="Start Sync" type="object" class="oe_highlight"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pms_sync_wizard" model="ir.actions.act_window">
+        <field name="name">PMS Manual Sync</field>
+        <field name="res_model">pms.sync.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

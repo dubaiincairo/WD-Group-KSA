@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Inherit Invoice Form View -->
+    <record id="view_move_form_inherit_pms" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.pms</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <!-- Add PMS fields in the header after the name field -->
+            <xpath expr="//notebook" position="before">
+                <group>
+                    <label for="pms_hotel_id" string="Hotel"/>
+                    <field name="pms_hotel_id" readonly="1" nolabel="1"/>
+                    <label for="pms_tran_id" string="Transaction ID"/>
+                    <field name="pms_tran_id" readonly="1" nolabel="1"/>
+                    <label for="pms_reference" string="Reference"/>
+                    <field name="pms_reference" readonly="1" nolabel="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit Invoice Tree View -->
+    <record id="view_invoice_tree_inherit_pms" model="ir.ui.view">
+        <field name="name">account.move.tree.inherit.pms</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_invoice_tree"/>
+        <field name="arch" type="xml">
+            <!-- Add PMS Hotel column after name field -->
+            <field name="name" position="after">
+                <field name="pms_hotel_id" optional="hide"/>
+                <field name="pms_reference" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Add search filters -->
+    <record id="view_account_invoice_filter_inherit_pms" model="ir.ui.view">
+        <field name="name">account.move.search.inherit.pms</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_account_invoice_filter"/>
+        <field name="arch" type="xml">
+            <!-- Add PMS search fields -->
+            <search>
+                <field name="pms_hotel_id"/>
+                <field name="pms_tran_id"/>
+                <field name="pms_reference"/>
+            </search>
+        </field>
+    </record>
+</odoo>
