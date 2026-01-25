@@ -9,12 +9,29 @@
             <!-- Add PMS fields in the header after the name field -->
             <xpath expr="//field[@name='memo']" position="after">
                 <group>
-                    <label for="pms_hotel_id" string="Hotel"/>
-                    <field name="pms_hotel_id" readonly="1" nolabel="1"/>
-                    <label for="pms_tran_id" string="Transaction ID"/>
-                    <field name="pms_tran_id" readonly="1" nolabel="1"/>
-                    <label for="pms_reference" string="Reference"/>
-                    <field name="pms_reference" readonly="1" nolabel="1"/>
+                    <group string="PMS Integration">
+                        <field name="pms_hotel_id" readonly="1"/>
+                        <field name="pms_tran_id" readonly="1"/>
+                        <field name="pms_reference" readonly="1"/>
+                    </group>
+                </group>
+                <group string="eZee Info" invisible="not pms_tran_id">
+                    <group string="Guest Information">
+                        <field name="ezee_id"/>
+                        <field name="ezee_guest_name"/>
+                        <field name="ezee_reservation_number"/>
+                        <field name="ezee_folio_number"/>
+                    </group>
+                    <group string="Reservation Details">
+                        <field name="ezee_type"/>
+                        <field name="ezee_room_number"/>
+                        <field name="ezee_checkin_date"/>
+                        <field name="ezee_checkout_date"/>
+                    </group>
+                    <group string="Transaction Details">
+                        <field name="ezee_receipt_no"/>
+                        <field name="ezee_amount"/>
+                    </group>
                 </group>
             </xpath>
         </field>
