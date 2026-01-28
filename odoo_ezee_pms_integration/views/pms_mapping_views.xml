@@ -47,6 +47,7 @@
         <field name="arch" type="xml">
             <list editable="bottom">
                 <field name="hotel_id"/>
+                <field name="pms_payment_id"/>
                 <field name="pms_payment_type"/>
                 <field name="journal_id"/>
             </list>

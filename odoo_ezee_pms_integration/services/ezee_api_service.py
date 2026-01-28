@@ -49,22 +49,28 @@ class eZeeAPIService:
             _logger.error(f"eZee Login Exception: {str(e)}")
             return False, msg
 
-    def fetch_data(self, api_type, from_date, to_date):
+    def fetch_data(self, api_type, from_date=None, to_date=None):
         request_for_map = {
             'sales': 'XERO_GET_TRANSACTION_DATA',
             'receipt': 'XERO_GET_RECEIPT_DATA',
             'payment': 'XERO_GET_PAYMENT_DATA',
             'journal': 'XERO_GENERAL_JOURNAL_INFO',
             'incidental': 'XERO_INCIDENTAL_INVOICE',
+            'config': 'XERO_GET_CONFIG_DATA',
         }
         
         payload = {
             "auth_code": self.creds.auth_code,
             "hotel_code": self.creds.hotel_code,
-            "fromdate": from_date.strftime('%Y-%m-%d'),
-            "todate": to_date.strftime('%Y-%m-%d'),
             "requestfor": request_for_map.get(api_type)
         }
+
+        if from_date:
+            from_date_str = from_date.strftime('%Y-%m-%d') if hasattr(from_date, 'strftime') else str(from_date)
+            payload["fromdate"] = from_date_str
+        if to_date:
+            to_date_str = to_date.strftime('%Y-%m-%d') if hasattr(to_date, 'strftime') else str(to_date)
+            payload["todate"] = to_date_str
         
         if api_type == 'sales':
             payload["ischeckout"] = "false"

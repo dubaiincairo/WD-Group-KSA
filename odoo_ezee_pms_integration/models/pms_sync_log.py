@@ -12,6 +12,7 @@ class PMSSyncLog(models.Model):
         ('payment', 'Payment'),
         ('journal', 'Journal'),
         ('incidental', 'Incidental'),
+        ('config', 'Configuration'),
     ], string='API Type')
     sync_date = fields.Date(string='Sync Date')
     status = fields.Selection([
