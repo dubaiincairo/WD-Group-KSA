@@ -1,5 +1,8 @@
 from odoo import models, fields, api
 from datetime import datetime
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class PMSSyncWizard(models.TransientModel):
     _name = 'pms.sync.wizard'
@@ -47,7 +50,7 @@ class PMSSyncWizard(models.TransientModel):
     def _process_sales(self, hotel, data):
         if not data: return
         
-        # Handle the list structure or wrapped data
+        
         records = data.get('data', []) if isinstance(data, dict) else data
         if not records or not isinstance(records, list): return
 
@@ -59,7 +62,7 @@ class PMSSyncWizard(models.TransientModel):
             tran_id = record.get('record_id')
             if not tran_id: continue
 
-            # Check if already exists
+            
             existing = self.env['account.move'].search([
                 ('pms_tran_id', '=', tran_id),
                 ('pms_hotel_id', '=', hotel.id),
@@ -67,13 +70,13 @@ class PMSSyncWizard(models.TransientModel):
             ])
             if existing: continue
 
-            # Find or create partner
+            
             partner = self._get_or_create_partner(record)
             
-            # Use the total_amount from the header if available
+           
             ezee_total = self._parse_ezee_amount(record.get('total_amount') or record.get('TotalAmount') or record.get('Amount'))
             
-            # Create Invoice
+            
             invoice_vals = {
                 'move_type': 'out_invoice',
                 'partner_id': partner.id,
@@ -84,7 +87,7 @@ class PMSSyncWizard(models.TransientModel):
                 'journal_id': hotel.journal_id.id,
                 'invoice_line_ids': [],
                 
-                # eZee Info fields mapped to response structure
+                
                 'ezee_id': record.get('record_id'),
                 'ezee_guest_name': record.get('reference5'),
                 'ezee_reservation_number': record.get('reference3'),
@@ -98,7 +101,7 @@ class PMSSyncWizard(models.TransientModel):
             }
 
             for detail in record.get('detail', []):
-                # Try to map account by ID or Name
+                
                 mapping = self.env['pms.account.mapping'].search([
                     ('hotel_id', '=', hotel.id),
                     '|',
@@ -108,7 +111,7 @@ class PMSSyncWizard(models.TransientModel):
                 
                 amount = self._parse_ezee_amount(detail.get('amount'))
                 if amount != 0 or detail.get('reference_name'):
-                    # Determine account
+                    
                     account_id = False
                     if mapping:
                         account_id = mapping.account_id.id
@@ -118,15 +121,21 @@ class PMSSyncWizard(models.TransientModel):
                         account_id = income_account.id
                     
                     if account_id:
+                        
+                        line_name = (mapping.pms_account_name if mapping else False) or \
+                                    detail.get('reference_name') or \
+                                    (mapping.account_id.name if mapping else False) or \
+                                    'PMS Charge'
+                        
                         invoice_vals['invoice_line_ids'].append((0, 0, {
-                            'name': detail.get('reference_name') or 'PMS Charge',
+                            'name': line_name,
                             'account_id': account_id,
                             'price_unit': amount,
                             'quantity': 1,
                             'analytic_distribution': {str(hotel.analytic_account_id.id): 100} if hotel.analytic_account_id else {},
                         }))
             
-            # Sum up lines to check if we matched everything
+            
             sum_lines = sum(line[2]['price_unit'] for line in invoice_vals['invoice_line_ids'])
             
             # If total doesn't match or no lines, adjust or create fallback
@@ -152,7 +161,7 @@ class PMSSyncWizard(models.TransientModel):
         if isinstance(value, (int, float)):
             return float(value)
         try:
-            # Handle string with potential commas or extra spaces
+            
             clean_value = str(value).replace(',', '').strip()
             return float(clean_value)
         except:
@@ -162,9 +171,9 @@ class PMSSyncWizard(models.TransientModel):
         """Helper to parse dates from eZee API (DD/MM/YYYY or YYYY-MM-DD)"""
         if not date_str:
             return False
-        # Strip potential time/whitespace
+        
         date_str = str(date_str).split(' ')[0]
-        # Try YYYY-MM-DD (standard JSON)
+        
         try:
             return datetime.strptime(date_str, '%Y-%m-%d').date()
         except:
@@ -193,7 +202,7 @@ class PMSSyncWizard(models.TransientModel):
         if not data or data.get('status') != 'Success': return
         for group in data.get('data', []):
             for record in group.get('data', []):
-                # Check if already exists
+                
                 existing = self.env['account.move'].search([
                     ('pms_tran_id', '=', record['tranId']),
                     ('pms_hotel_id', '=', hotel.id),
@@ -203,8 +212,6 @@ class PMSSyncWizard(models.TransientModel):
 
                 partner = self._get_or_create_partner({'reference5': record.get('reference2')})
                 
-                # For receipts, we create a Journal Entry (or Payment)
-                # Based on the requirement "Post balanced journal entries"
                 move_vals = {
                     'move_type': 'out_receipt',
                     'date': record['tran_datetime'],
@@ -215,72 +222,148 @@ class PMSSyncWizard(models.TransientModel):
                     'line_ids': [],
                 }
 
+                total_debit = 0.0
+                total_credit = 0.0
                 for detail in record.get('detail', []):
-                    # Map account based on reference_id or reference_value
                     mapping = self.env['pms.account.mapping'].search([
                         ('hotel_id', '=', hotel.id),
-                        ('pms_account_id', '=', str(detail.get('reference_id')))
+                        '|',
+                        ('pms_account_id', '=', str(detail.get('reference_id'))),
+                        ('pms_account_name', '=', detail.get('reference_value'))
                     ], limit=1)
                     account_id = mapping.account_id.id if mapping else None
                     if not account_id:
-                        # Fallback or default logic
                         continue
 
                     amount = float(detail.get('amount', 0))
+                    
+                    debit = amount if detail.get('tran_type') == 'Cr' else 0.0
+                    credit = amount if detail.get('tran_type') == 'Dr' else 0.0
+
                     move_vals['line_ids'].append((0, 0, {
                         'name': detail.get('reference_value') or 'PMS Receipt',
                         'partner_id': partner.id,
                         'account_id': account_id,
-                        'debit': amount if detail.get('tran_type') == 'Dr' else 0.0,
-                        'credit': amount if detail.get('tran_type') == 'Cr' else 0.0,
+                        'debit': debit,
+                        'credit': credit,
                         'analytic_distribution': {str(hotel.analytic_account_id.id): 100} if hotel.analytic_account_id else {},
                     }))
+                    total_debit += debit
+                    total_credit += credit
+                
+                if move_vals['line_ids'] and abs(total_debit - total_credit) > 0.01:
+                    diff = total_debit - total_credit
+                    receivable_account = partner.property_account_receivable_id or self.env['account.account'].search([
+                        ('account_type', '=', 'asset_receivable'),
+                        ('company_id', '=', self.env.company.id)
+                    ], limit=1)
+                    if receivable_account:
+                        move_vals['line_ids'].append((0, 0, {
+                            'name': 'PMS Receipt Balancing',
+                            'partner_id': partner.id,
+                            'account_id': receivable_account.id,
+                            'debit': -diff if diff < 0 else 0.0,
+                            'credit': diff if diff > 0 else 0.0,
+                            'analytic_distribution': {str(hotel.analytic_account_id.id): 100} if hotel.analytic_account_id else {},
+                        }))
                 
                 if move_vals['line_ids']:
+                    
+                    move_vals['move_type'] = 'entry'
                     self.env['account.move'].create(move_vals).action_post()
 
     def _process_payments(self, hotel, data):
-        if not data or data.get('status') != 'Success': return
+        if not data or data.get('status') != 'Success': 
+            return
+
         for group in data.get('data', []):
+            group_type = group.get('type')
             for record in group.get('data', []):
-                existing = self.env['account.move'].search([
-                    ('pms_tran_id', '=', record['tranId']),
-                    ('pms_hotel_id', '=', hotel.id),
-                    ('move_type', '=', 'entry')
-                ])
-                if existing: continue
-
-                partner = self._get_or_create_partner({'reference5': record.get('reference2')})
-                move_vals = {
-                    'move_type': 'entry',
-                    'date': record['tran_datetime'],
-                    'pms_tran_id': record['tranId'],
-                    'pms_hotel_id': hotel.id,
-                    'pms_reference': record.get('reference1'),
-                    'journal_id': hotel.journal_id.id,
-                    'line_ids': [],
-                }
-
+                payment_created = False
                 for detail in record.get('detail', []):
-                    mapping = self.env['pms.account.mapping'].search([
-                        ('hotel_id', '=', hotel.id),
-                        ('pms_account_id', '=', str(detail.get('reference_id')))
+                    # Skip balancing lines to Guest Ledger
+                    if detail.get('reference_id') == 8 or detail.get('reference_value') == 'Guest Ledger':
+                        continue
+
+                    # Unique ID per payment line to support split payments correctly
+                    
+                    pms_payment_id = f"{record['tranId']}_{detail.get('detailId', '0')}"
+                    
+                    existing = self.env['account.payment'].search([
+                        ('pms_tran_id', '=', pms_payment_id),
+                        ('pms_hotel_id', '=', hotel.id),
                     ], limit=1)
-                    account_id = mapping.account_id.id if mapping else None
-                    if not account_id: continue
+                    
+                    if not existing:
+                        
+                        existing = self.env['account.payment'].search([
+                            ('pms_tran_id', '=', record['tranId']),
+                            ('pms_hotel_id', '=', hotel.id),
+                        ], limit=1)
+
+                    if existing:
+                        _logger.debug("Payment %s already exists, skipping", pms_payment_id)
+                        payment_created = True # Mark as "handled"
+                        continue
+
+                    mapping = self.env['pms.payment.mapping'].search([
+                        ('hotel_id', '=', hotel.id),
+                        '|', '|',
+                        ('pms_payment_id', '=', str(detail.get('sub_reference2_value'))),
+                        ('pms_payment_type', '=', detail.get('reference_value')),
+                        ('pms_payment_type', '=', record.get('reference14'))
+                    ], limit=1)
+                    
+                    if not mapping or not mapping.journal_id:
+                        _logger.warning("No mapping found for PMS Payment. Details: ID=%s, Value=%s, Header=%s. Record: %s", 
+                                       detail.get('sub_reference2_value'), detail.get('reference_value'), record.get('reference14'), record['tranId'])
+                        continue
 
                     amount = float(detail.get('amount', 0))
-                    move_vals['line_ids'].append((0, 0, {
-                        'name': detail.get('reference_value') or 'PMS Payment',
+                    if amount <= 0:
+                        continue
+
+                    is_refund = group_type in ['Guest Refund', 'Advance Deposit Refund', 'Cityledger Refund']
+                    payment_type = 'outbound' if is_refund else ('inbound' if detail.get('tran_type') == 'Cr' else 'outbound')
+                    
+                    partner = self._get_or_create_partner({
+                        'reference5': record.get('reference2'),
+                        'reference19': record.get('reference19'),
+                    })
+
+                    method_lines = mapping.journal_id.inbound_payment_method_line_ids if payment_type == 'inbound' else mapping.journal_id.outbound_payment_method_line_ids
+                    payment_method_line = method_lines.filtered(lambda l: l.code == 'manual')[:1] or method_lines[:1]
+
+                    payment_vals = {
+                        'payment_type': payment_type,
+                        'partner_type': 'customer',
                         'partner_id': partner.id,
-                        'account_id': account_id,
-                        'debit': amount if detail.get('tran_type') == 'Dr' else 0.0,
-                        'credit': amount if detail.get('tran_type') == 'Cr' else 0.0,
-                        'analytic_distribution': {str(hotel.analytic_account_id.id): 100} if hotel.analytic_account_id else {},
-                    }))
+                        'amount': amount,
+                        'date': self._parse_ezee_date(record.get('tran_datetime')) or fields.Date.today(),
+                        'journal_id': mapping.journal_id.id,
+                        'payment_method_line_id': payment_method_line.id if payment_method_line else False,
+                        'pms_tran_id': pms_payment_id,
+                        'pms_hotel_id': hotel.id,
+                        'pms_reference': record.get('reference1'),
+                        
+                        'ezee_id': record.get('tranId'),
+                        'ezee_guest_name': record.get('reference2'),
+                        'ezee_type': detail.get('reference_value') or record.get('reference14'),
+                        'ezee_amount': amount,
+                        'ezee_reservation_number': record.get('reference3'),
+                        'ezee_folio_number': record.get('reference4'),
+                    }
+                    
+                    try:
+                        payment = self.env['account.payment'].create(payment_vals)
+                        payment.action_post()
+                        payment_created = True
+                        _logger.info("Sync: Created Odoo payment %s for PMS %s", payment.name, pms_payment_id)
+                    except Exception as e:
+                        _logger.error("Sync Error: Failed to create payment for PMS %s: %s", pms_payment_id, str(e))
                 
-                if move_vals['line_ids']:
-                    self.env['account.move'].create(move_vals).action_post()
+                if not payment_created:
+                    _logger.debug("No payment detail processed for record %s", record['tranId'])
 
     def _process_journals(self, hotel, data):
         if not data or data.get('status') != 'Success': return
@@ -293,6 +376,8 @@ class PMSSyncWizard(models.TransientModel):
                 ])
                 if existing: continue
 
+                partner = self._get_or_create_partner({'reference5': record.get('reference2') or 'Guest'})
+
                 move_vals = {
                     'move_type': 'entry',
                     'date': record['tran_datetime'],
@@ -303,23 +388,55 @@ class PMSSyncWizard(models.TransientModel):
                     'line_ids': [],
                 }
 
+                total_debit = 0.0
+                total_credit = 0.0
                 for detail in record.get('detail', []):
                     mapping = self.env['pms.account.mapping'].search([
                         ('hotel_id', '=', hotel.id),
-                        ('pms_account_id', '=', str(detail.get('reference_id')))
+                        '|',
+                        ('pms_account_id', '=', str(detail.get('reference_id'))),
+                        ('pms_account_name', '=', detail.get('reference_value'))
                     ], limit=1)
                     account_id = mapping.account_id.id if mapping else None
                     if not account_id: continue
 
                     amount = float(detail.get('amount', 0))
+                    
+                    debit = amount if detail.get('tran_type') == 'Cr' else 0.0
+                    credit = amount if detail.get('tran_type') == 'Dr' else 0.0
+
+                    line_name = (mapping.pms_account_name if mapping else False) or \
+                                detail.get('reference_value') or \
+                                (mapping.account_id.name if mapping else False) or \
+                                'PMS Journal'
+
                     move_vals['line_ids'].append((0, 0, {
-                        'name': detail.get('reference_value') or 'PMS Journal',
+                        'name': line_name,
+                        'partner_id': partner.id,
                         'account_id': account_id,
-                        'debit': amount if detail.get('tran_type') == 'Dr' else 0.0,
-                        'credit': amount if detail.get('tran_type') == 'Cr' else 0.0,
+                        'debit': debit,
+                        'credit': credit,
                         'analytic_distribution': {str(hotel.analytic_account_id.id): 100} if hotel.analytic_account_id else {},
                     }))
+                    total_debit += debit
+                    total_credit += credit
                 
+                if move_vals['line_ids'] and abs(total_debit - total_credit) > 0.01:
+                    diff = total_debit - total_credit
+                    receivable_account = partner.property_account_receivable_id or self.env['account.account'].search([
+                        ('account_type', '=', 'asset_receivable'),
+                        ('company_id', '=', self.env.company.id)
+                    ], limit=1)
+                    if receivable_account:
+                        move_vals['line_ids'].append((0, 0, {
+                            'name': 'PMS Journal Balancing',
+                            'partner_id': partner.id,
+                            'account_id': receivable_account.id,
+                            'debit': -diff if diff < 0 else 0.0,
+                            'credit': diff if diff > 0 else 0.0,
+                            'analytic_distribution': {str(hotel.analytic_account_id.id): 100} if hotel.analytic_account_id else {},
+                        }))
+
                 if move_vals['line_ids']:
                     self.env['account.move'].create(move_vals).action_post()
 

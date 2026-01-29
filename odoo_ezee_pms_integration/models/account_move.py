@@ -43,5 +43,5 @@ class AccountPayment(models.Model):
     ezee_amount = fields.Float(string='Amount', readonly=True, copy=False)
 
     _sql_constraints = [
-        ('pms_tran_id_unique', 'unique(pms_tran_id, pms_hotel_id, move_type)', 'PMS Transaction ID must be unique per hotel and type!')
+        ('pms_tran_id_unique', 'unique(pms_tran_id, pms_hotel_id, payment_type)', 'PMS Transaction ID must be unique per hotel and payment type!')
     ]

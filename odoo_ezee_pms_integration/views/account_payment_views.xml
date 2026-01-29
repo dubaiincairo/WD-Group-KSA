@@ -6,33 +6,34 @@
         <field name="model">account.payment</field>
         <field name="inherit_id" ref="account.view_account_payment_form"/>
         <field name="arch" type="xml">
-            <!-- Add PMS fields in the header after the name field -->
-            <xpath expr="//field[@name='memo']" position="after">
-                <group>
-                    <group string="PMS Integration">
-                        <field name="pms_hotel_id" readonly="1"/>
-                        <field name="pms_tran_id" readonly="1"/>
-                        <field name="pms_reference" readonly="1"/>
-                    </group>
-                </group>
-                <group string="eZee Info" invisible="not pms_tran_id">
-                    <group string="Guest Information">
-                        <field name="ezee_id"/>
-                        <field name="ezee_guest_name"/>
-                        <field name="ezee_reservation_number"/>
-                        <field name="ezee_folio_number"/>
-                    </group>
-                    <group string="Reservation Details">
-                        <field name="ezee_type"/>
-                        <field name="ezee_room_number"/>
-                        <field name="ezee_checkin_date"/>
-                        <field name="ezee_checkout_date"/>
-                    </group>
-                    <group string="Transaction Details">
-                        <field name="ezee_receipt_no"/>
-                        <field name="ezee_amount"/>
-                    </group>
-                </group>
+            <xpath expr="//sheet" position="inside">
+                <notebook invisible="not pms_tran_id">
+                    <page string="PMS Integration" name="pms_integration">
+                        <group name="pms_header">
+                            <group string="Basic Information">
+                                <field name="pms_hotel_id" readonly="1"/>
+                                <field name="pms_tran_id" readonly="1"/>
+                                <field name="pms_reference" readonly="1"/>
+                            </group>
+                            <group string="Guest &amp; Folio">
+                                <field name="ezee_id" readonly="1"/>
+                                <field name="ezee_guest_name" readonly="1"/>
+                                <field name="ezee_reservation_number" readonly="1"/>
+                                <field name="ezee_folio_number" readonly="1"/>
+                            </group>
+                            <group string="Room &amp; Dates">
+                                <field name="ezee_type" readonly="1"/>
+                                <field name="ezee_room_number" readonly="1"/>
+                                <field name="ezee_checkin_date" readonly="1"/>
+                                <field name="ezee_checkout_date" readonly="1"/>
+                            </group>
+                            <group string="Receipt Info">
+                                <field name="ezee_receipt_no" readonly="1"/>
+                                <field name="ezee_amount" readonly="1"/>
+                            </group>
+                        </group>
+                    </page>
+                </notebook>
             </xpath>
         </field>
     </record>
