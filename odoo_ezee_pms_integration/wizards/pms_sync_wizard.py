@@ -352,6 +352,10 @@ class PMSSyncWizard(models.TransientModel):
                         'ezee_amount': amount,
                         'ezee_reservation_number': record.get('reference3'),
                         'ezee_folio_number': record.get('reference4'),
+                        'ezee_room_number': record.get('reference13'),
+                        'ezee_checkin_date': self._parse_ezee_date(record.get('reference8')),
+                        'ezee_checkout_date': self._parse_ezee_date(record.get('reference9')),
+                        'ezee_receipt_no': record.get('reference1'),
                     }
                     
                     try:
