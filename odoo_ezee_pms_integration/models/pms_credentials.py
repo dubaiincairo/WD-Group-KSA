@@ -114,66 +114,75 @@ class PMSCredentials(models.Model):
 
         for rec in records:
             desc_type = str(rec.get('descriptiontype', '')).upper()
-            unk_id = rec.get('descriptionunkid')
-            name = rec.get('description')
+            desc_type_unk_id = rec.get('descriptiontypeunkid')
+            desc_unk_id = rec.get('descriptionunkid')
+            desc_name = rec.get('description')
+            header_id=rec.get('headerid')
+            header_name=rec.get('header')
 
-            if not unk_id:
+            if not desc_unk_id:
                 continue
 
             if desc_type in ['ROOM TYPE', 'SOURCE', 'EXTRA CHARGE', 'REVENUE TYPE', 'ROOM CHARGE', 'DISCOUNT', 'PAID OUT', 'CITY LEDGER']:
                 mapping = self.env['pms.account.mapping'].search([
                     ('hotel_id', '=', self.id),
-                    ('pms_account_id', '=', str(unk_id))
+                    ('pms_account_id', '=', desc_unk_id),
+                    ('pms_account_type_id', '=', desc_type_unk_id),
+                    ('pms_account_header_id', '=', header_id),
                 ], limit=1)
                 
                 vals = {
-                    'pms_account_name': name,
-                    'hotel_id': self.id,
-                    'pms_account_id': str(unk_id),
-                }
-                
-                if mapping:
-                    mapping.write({'pms_account_name': name})
-                else:
-                    vals['account_id'] = self.journal_id.default_account_id.id or False
-                    self.env['pms.account.mapping'].create(vals)
-
-            elif 'TAX' in desc_type:
-                mapping = self.env['pms.tax.mapping'].search([
-                    ('hotel_id', '=', self.id),
-                    ('pms_tax_id', '=', str(unk_id))
-                ], limit=1)
-                
-                vals = {
-                    'pms_tax_name': name,
-                    'hotel_id': self.id,
-                    'pms_tax_id': str(unk_id),
-                }
-                
-                if mapping:
-                    mapping.write({'pms_tax_name': name})
-                else:
-                    self.env['pms.tax.mapping'].create(vals)
-
-            elif desc_type == 'PAYMENT TYPE':
-                if str(unk_id) == '1' and name == 'Payment Type':
-                    continue
-                    
-                mapping = self.env['pms.payment.mapping'].search([
-                    ('hotel_id', '=', self.id),
-                    '|',
-                    ('pms_payment_id', '=', str(unk_id)),
-                    ('pms_payment_type', '=', name)
-                ], limit=1)
-                
-                vals = {
-                    'pms_payment_type': name,
-                    'pms_payment_id': str(unk_id),
+                    'pms_account_name': desc_name,
+                    'pms_account_type_name': desc_type,
+                    'pms_account_header_name': header_name,
                     'hotel_id': self.id,
                 }
                 
                 if mapping:
                     mapping.write(vals)
                 else:
-                    vals['journal_id'] = self.journal_id.id or False
-                    self.env['pms.payment.mapping'].create(vals)
+                    vals['hotel_id'] = self.id
+                    vals['pms_account_id'] = desc_unk_id
+                    vals['pms_account_type_id'] = desc_type_unk_id
+                    vals['pms_account_header_id'] = header_id
+                    self.env['pms.account.mapping'].create(vals)
+
+            # elif 'TAX' in desc_type:
+            #     mapping = self.env['pms.tax.mapping'].search([
+            #         ('hotel_id', '=', self.id),
+            #         ('pms_tax_id', '=', str(unk_id))
+            #     ], limit=1)
+                
+            #     vals = {
+            #         'pms_tax_name': name,
+            #         'hotel_id': self.id,
+            #         'pms_tax_id': str(unk_id),
+            #     }
+                
+            #     if mapping:
+            #         mapping.write({'pms_tax_name': name})
+            #     else:
+            #         self.env['pms.tax.mapping'].create(vals)
+
+            # elif desc_type == 'PAYMENT TYPE':
+            #     if str(unk_id) == '1' and name == 'Payment Type':
+            #         continue
+                    
+            #     mapping = self.env['pms.payment.mapping'].search([
+            #         ('hotel_id', '=', self.id),
+            #         '|',
+            #         ('pms_payment_id', '=', str(unk_id)),
+            #         ('pms_payment_type', '=', name)
+            #     ], limit=1)
+                
+            #     vals = {
+            #         'pms_payment_type': name,
+            #         'pms_payment_id': str(unk_id),
+            #         'hotel_id': self.id,
+            #     }
+                
+            #     if mapping:
+            #         mapping.write(vals)
+            #     else:
+            #         vals['journal_id'] = self.journal_id.id or False
+            #         self.env['pms.payment.mapping'].create(vals)

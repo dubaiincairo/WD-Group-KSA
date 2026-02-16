@@ -9,6 +9,8 @@
                 <field name="hotel_id"/>
                 <field name="pms_account_id"/>
                 <field name="pms_account_name"/>
+                <field name="pms_account_type_name"/>
+                <field name="pms_account_header_name"/>
                 <field name="account_id"/>
             </list>
         </field>

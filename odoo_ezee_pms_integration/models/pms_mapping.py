@@ -5,8 +5,12 @@ class PMSAccountMapping(models.Model):
     _description = 'PMS Account Mapping'
 
     hotel_id = fields.Many2one('pms.credentials', string='Hotel', required=True)
-    pms_account_id = fields.Char(string='PMS Account ID', required=True)
+    pms_account_id = fields.Integer(string='PMS Account ID', required=True)
     pms_account_name = fields.Char(string='PMS Account Name')
+    pms_account_header_id=fields.Integer(string='PMS Account Reference ID')
+    pms_account_header_name=fields.Char(string='PMS Account Reference')
+    pms_account_type_id = fields.Integer(string='PMS Account Type ID')
+    pms_account_type_name = fields.Char(string='PMS Account Sub Reference')
     account_id = fields.Many2one('account.account', string='Odoo Account')
 
 class PMSTaxMapping(models.Model):
