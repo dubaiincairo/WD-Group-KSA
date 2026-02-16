@@ -27,7 +27,7 @@
     </record>
 
     <!-- Tax Mapping -->
-    <record id="view_pms_tax_mapping_tree" model="ir.ui.view">
+    <!-- <record id="view_pms_tax_mapping_tree" model="ir.ui.view">
         <field name="name">pms.tax.mapping.tree</field>
         <field name="model">pms.tax.mapping</field>
         <field name="arch" type="xml">
@@ -38,16 +38,16 @@
                 <field name="tax_id"/>
             </list>
         </field>
-    </record>
+    </record> -->
 
-    <record id="action_pms_tax_mapping" model="ir.actions.act_window">
+    <!-- <record id="action_pms_tax_mapping" model="ir.actions.act_window">
         <field name="name">Tax Mapping</field>
         <field name="res_model">pms.tax.mapping</field>
         <field name="view_mode">list</field>
-    </record>
+    </record> -->
 
     <!-- Payment Mapping -->
-    <record id="view_pms_payment_mapping_tree" model="ir.ui.view">
+    <!-- <record id="view_pms_payment_mapping_tree" model="ir.ui.view">
         <field name="name">pms.payment.mapping.tree</field>
         <field name="model">pms.payment.mapping</field>
         <field name="arch" type="xml">
@@ -58,11 +58,11 @@
                 <field name="journal_id"/>
             </list>
         </field>
-    </record>
+    </record> -->
 
-    <record id="action_pms_payment_mapping" model="ir.actions.act_window">
+    <!-- <record id="action_pms_payment_mapping" model="ir.actions.act_window">
         <field name="name">Payment Mapping</field>
         <field name="res_model">pms.payment.mapping</field>
         <field name="view_mode">list</field>
-    </record>
+    </record> -->
 </odoo>
