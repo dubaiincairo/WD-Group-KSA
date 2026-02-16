@@ -7,10 +7,14 @@
         <field name="arch" type="xml">
             <list editable="bottom">
                 <field name="hotel_id"/>
-                <field name="pms_account_id"/>
+                <field name="hotel_id_code"/>
                 <field name="pms_account_name"/>
+                <field name="pms_account_id"/>
                 <field name="pms_account_type_name"/>
+                <field name="pms_account_type_id"/>
                 <field name="pms_account_header_name"/>
+                <field name="pms_account_header_id"/>
+                <field name="account_group_id"/>
                 <field name="account_id"/>
             </list>
         </field>
