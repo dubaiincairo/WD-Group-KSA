@@ -22,17 +22,17 @@
               action="action_pms_account_mapping"
               sequence="10"/>
 
-    <menuitem id="menu_pms_tax_mapping"
-              name="Tax Mapping"
-              parent="menu_pms_mapping_root"
-              action="action_pms_tax_mapping"
-              sequence="20"/>
+<!--    <menuitem id="menu_pms_tax_mapping"-->
+<!--              name="Tax Mapping"-->
+<!--              parent="menu_pms_mapping_root"-->
+<!--              action="action_pms_tax_mapping"-->
+<!--              sequence="20"/>-->
 
-    <menuitem id="menu_pms_payment_mapping"
-              name="Payment Mapping"
-              parent="menu_pms_mapping_root"
-              action="action_pms_payment_mapping"
-              sequence="30"/>
+<!--    <menuitem id="menu_pms_payment_mapping"-->
+<!--              name="Payment Mapping"-->
+<!--              parent="menu_pms_mapping_root"-->
+<!--              action="action_pms_payment_mapping"-->
+<!--              sequence="30"/>-->
 
     <menuitem id="menu_pms_sync_log"
               name="Sync Logs"

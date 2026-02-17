@@ -105,8 +105,8 @@ class PMSSyncWizard(models.TransientModel):
                 mapping = self.env['pms.account.mapping'].search([
                     ('hotel_id', '=', hotel.id),
                     '|',
-                    ('pms_account_id', '=', str(detail.get('reference_id'))),
-                    ('pms_account_name', '=', detail.get('reference_name'))
+                    ('pms_account_header_id', '=', int(detail.get('reference_id')) if detail.get('reference_id') else 0),
+                    ('pms_account_header_name', '=', detail.get('reference_name'))
                 ], limit=1)
                 
                 amount = self._parse_ezee_amount(detail.get('amount'))
@@ -129,6 +129,7 @@ class PMSSyncWizard(models.TransientModel):
                         
                         invoice_vals['invoice_line_ids'].append((0, 0, {
                             'name': line_name,
+                            'discount': 0,
                             'account_id': account_id,
                             'price_unit': amount,
                             'quantity': 1,
@@ -139,20 +140,21 @@ class PMSSyncWizard(models.TransientModel):
             sum_lines = sum(line[2]['price_unit'] for line in invoice_vals['invoice_line_ids'])
             
             # If total doesn't match or no lines, adjust or create fallback
-            if abs(sum_lines - ezee_total) > 0.01:
-                diff = ezee_total - sum_lines
-                fallback_account = hotel.journal_id.default_account_id.id or (income_account.id if income_account else False)
-                if fallback_account:
-                    invoice_vals['invoice_line_ids'].append((0, 0, {
-                        'name': 'PMS Sales Adjustment' if sum_lines > 0 else 'PMS Sales Import',
-                        'account_id': fallback_account,
-                        'price_unit': diff,
-                        'quantity': 1,
-                        'analytic_distribution': {str(hotel.analytic_account_id.id): 100} if hotel.analytic_account_id else {},
-                    }))
+            # if abs(sum_lines - ezee_total) > 0.01:
+            #     diff = ezee_total - sum_lines
+            #     fallback_account = hotel.journal_id.default_account_id.id or (income_account.id if income_account else False)
+            #     if fallback_account:
+            #         invoice_vals['invoice_line_ids'].append((0, 0, {
+            #             'name': 'PMS Sales Adjustment' if sum_lines > 0 else 'PMS Sales Import',
+            #             'account_id': fallback_account,
+            #             'price_unit': diff,
+            #             'quantity': 1,
+            #             'analytic_distribution': {str(hotel.analytic_account_id.id): 100} if hotel.analytic_account_id else {},
+            #         }))
 
             if invoice_vals['invoice_line_ids']:
-                self.env['account.move'].create(invoice_vals)
+                inv = self.env['account.move'].create(invoice_vals)
+                inv.action_post()
 
     def _parse_ezee_amount(self, value):
         """Robust float parsing for eZee amounts"""
