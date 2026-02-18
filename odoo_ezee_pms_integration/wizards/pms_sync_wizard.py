@@ -103,10 +103,7 @@ class PMSSyncWizard(models.TransientModel):
             for detail in record.get('detail', []):
                 
                 mapping = self.env['pms.account.mapping'].search([
-                    ('hotel_id', '=', hotel.id),
-                    '|',
                     ('pms_account_header_id', '=', int(detail.get('reference_id')) if detail.get('reference_id') else 0),
-                    ('pms_account_header_name', '=', detail.get('reference_name'))
                 ], limit=1)
                 
                 amount = self._parse_ezee_amount(detail.get('amount'))
@@ -122,8 +119,7 @@ class PMSSyncWizard(models.TransientModel):
                     
                     if account_id:
                         
-                        line_name = (mapping.pms_account_name if mapping else False) or \
-                                    detail.get('reference_name') or \
+                        line_name = detail.get('charge_name') or \
                                     (mapping.account_id.name if mapping else False) or \
                                     'PMS Charge'
                         

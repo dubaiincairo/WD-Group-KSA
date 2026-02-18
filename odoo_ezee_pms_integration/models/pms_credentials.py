@@ -120,30 +120,19 @@ class PMSCredentials(models.Model):
             header_id=int(rec.get('headerid'))
             header_name=rec.get('header')
 
-            if not desc_unk_id:
+            if not header_id:
                 continue
 
             mapping = self.env['pms.account.mapping'].search([
-                ('hotel_id', '=', self.id),
-                ('pms_account_id', '=', desc_unk_id),
-                ('pms_account_type_id', '=', desc_type_unk_id),
                 ('pms_account_header_id', '=', header_id),
             ], limit=1)
 
-            vals = {
-                'pms_account_name': desc_name,
-                'pms_account_type_name': desc_type,
-                'pms_account_header_name': header_name,
-                'hotel_id': self.id,
-            }
-
+            vals = {}
             if mapping:
-                mapping.write(vals)
+                continue
             else:
-                vals['hotel_id'] = self.id
-                vals['pms_account_id'] = desc_unk_id
-                vals['pms_account_type_id'] = desc_type_unk_id
                 vals['pms_account_header_id'] = header_id
+                vals['pms_account_header_name'] = header_name
                 self.env['pms.account.mapping'].create(vals)
 
             # elif 'TAX' in desc_type:

@@ -7,6 +7,7 @@
         <field name="hotel_code">59557</field>
         <field name="username">Abdalla Hassan Elfouly</field>
         <field name="password">Aa@12345</field>
+        <field name="auth_code">1461206899963f9e88-f1df-11f0-9</field>
         <field name="active" eval="True"/>
     </record>
 
@@ -15,6 +16,7 @@
         <field name="hotel_code">59207</field>
         <field name="username">Abdalla Hassan Elfouly</field>
         <field name="password">Aa@12345</field>
+        <field name="auth_code">1461206899963f9e88-f1df-11f0-9</field>
         <field name="active" eval="True"/>
     </record>
 
@@ -23,6 +25,7 @@
         <field name="hotel_code">59208</field>
         <field name="username">Abdalla Hassan Elfouly</field>
         <field name="password">Aa@12345</field>
+        <field name="auth_code">1461206899963f9e88-f1df-11f0-9</field>
         <field name="active" eval="True"/>
     </record>
 
@@ -31,6 +34,7 @@
         <field name="hotel_code">59081</field>
         <field name="username">Abdalla Hassan Elfouly</field>
         <field name="password">Aa@12345</field>
+        <field name="auth_code">1461206899963f9e88-f1df-11f0-9</field>
         <field name="active" eval="True"/>
     </record>
 
@@ -38,6 +42,7 @@
         <field name="name">SwissBlue Serviced Apartments Alsamer District</field>
         <field name="hotel_code">59068</field>
         <field name="username">Abdalla Hassan Elfouly</field>
+        <field name="auth_code">1461206899963f9e88-f1df-11f0-9</field>
         <field name="password">Aa@12345</field>
         <field name="active" eval="True"/>
     </record>
@@ -47,6 +52,7 @@
         <field name="hotel_code">22888</field>
         <field name="username">Abdalla Hassan Elfouly</field>
         <field name="password">Aa@12345</field>
+        <field name="auth_code">1461206899963f9e88-f1df-11f0-9</field>
         <field name="active" eval="True"/>
     </record>
 
