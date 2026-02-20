@@ -137,11 +137,13 @@ class PMSSyncWizard(models.TransientModel):
                 if ref_name == 'Taxes':
                     charge_name=detail.get('charge_name')
                     percentage = detail.get('taxper')
-                    raise UserError(f'Please Set Taxes for {charge_name} and Percentage {percentage}')  # pylint: disable
                     tax_id = self.env['account.tax'].search([
                         ('type_tax_use','=','sale'),
                         ('name', '=', charge_name),
                     ], limit=1).id
+                    if not tax_id:
+                        raise UserError(f'Please Set Taxes for {charge_name} and Percentage {percentage}')  # pylint: disable
+
                     tax_ids.append(tax_id)
 
                     if tax_ids:
