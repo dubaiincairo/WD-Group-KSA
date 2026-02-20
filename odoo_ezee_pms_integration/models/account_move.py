@@ -29,7 +29,6 @@ class AccountPayment(models.Model):
     pms_tran_id = fields.Char(string='PMS Transaction ID', copy=False, index=True)
     pms_hotel_id = fields.Many2one('pms.credentials', string='PMS Hotel', copy=False)
     pms_reference = fields.Char(string='PMS Reference', copy=False)
-
     # eZee Info fields
     ezee_id = fields.Char(string='Ezee ID', readonly=True, copy=False)
     ezee_guest_name = fields.Char(string='Guest Name', readonly=True, copy=False)
@@ -41,7 +40,7 @@ class AccountPayment(models.Model):
     ezee_checkout_date = fields.Date(string='Check-Out Date', readonly=True, copy=False)
     ezee_receipt_no = fields.Char(string='Receipt No', readonly=True, copy=False)
     ezee_amount = fields.Float(string='Amount', readonly=True, copy=False)
-
+    
     _sql_constraints = [
         ('pms_tran_id_unique', 'unique(pms_tran_id, pms_hotel_id, payment_type)', 'PMS Transaction ID must be unique per hotel and payment type!')
     ]

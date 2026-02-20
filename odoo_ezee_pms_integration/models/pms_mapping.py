@@ -19,7 +19,7 @@ class PMSTaxMapping(models.Model):
     _name = 'pms.tax.mapping'
     _description = 'PMS Tax Mapping'
 
-    hotel_id = fields.Many2one('pms.credentials', string='Hotel', required=True)
+    # hotel_id = fields.Many2one('pms.credentials', string='Hotel', required=True)
     pms_tax_id = fields.Char(string='PMS Tax ID', required=True)
     pms_tax_name = fields.Char(string='PMS Tax Name')
     tax_id = fields.Many2one('account.tax', string='Odoo Tax')

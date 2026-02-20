@@ -123,17 +123,32 @@ class PMSCredentials(models.Model):
             if not header_id:
                 continue
 
-            mapping = self.env['pms.account.mapping'].search([
-                ('pms_account_header_id', '=', header_id),
-            ], limit=1)
+            if str.upper(desc_type) == 'TAX' or str.upper(desc_type)=='TAXES':
+                mapping = self.env['pms.tax.mapping'].search([
+                ('pms_tax_id', '=', str(desc_unk_id))], limit=1)
 
-            vals = {}
-            if mapping:
-                continue
+                vals = {
+                    'pms_tax_name': desc_name,
+                    # 'hotel_id': self.id,
+                    'pms_tax_id': str(desc_unk_id),
+                }
+                
+                if mapping:
+                    mapping.write({'pms_tax_name': desc_name})
+                else:
+                    self.env['pms.tax.mapping'].create(vals)
             else:
-                vals['pms_account_header_id'] = header_id
-                vals['pms_account_header_name'] = header_name
-                self.env['pms.account.mapping'].create(vals)
+                mapping = self.env['pms.account.mapping'].search([
+                    ('pms_account_header_id', '=', header_id),
+                ], limit=1)
+
+                vals = {}
+                if mapping:
+                    continue
+                else:
+                    vals['pms_account_header_id'] = header_id
+                    vals['pms_account_header_name'] = header_name
+                    self.env['pms.account.mapping'].create(vals)
 
             # elif 'TAX' in desc_type:
             #     mapping = self.env['pms.tax.mapping'].search([

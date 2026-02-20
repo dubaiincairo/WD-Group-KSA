@@ -46,6 +46,7 @@ class PMSSyncWizard(models.TransientModel):
             if self.sync_incidentals:
                 data = service.fetch_data('incidental', self.from_date, self.to_date)
                 self._process_incidentals(hotel, data)
+       
 
     def _process_sales(self, hotel, data):
         if not data: return
@@ -68,15 +69,17 @@ class PMSSyncWizard(models.TransientModel):
                 ('pms_hotel_id', '=', hotel.id),
                 ('move_type', '=', 'out_invoice')
             ])
-            if existing: continue
+            if existing:
+                existing.button_draft()
 
             
             partner = self._get_or_create_partner(record)
-            
-           
+
+
             ezee_total = self._parse_ezee_amount(record.get('total_amount') or record.get('TotalAmount') or record.get('Amount'))
-            
-            
+
+            if record.get('reference3')=='S226-03':
+                print ("IT IS")
             invoice_vals = {
                 'move_type': 'out_invoice',
                 'partner_id': partner.id,
@@ -86,29 +89,33 @@ class PMSSyncWizard(models.TransientModel):
                 'pms_reference': record.get('reference3'), # Reservation No
                 'journal_id': hotel.journal_id.id,
                 'invoice_line_ids': [],
-                
-                
+
+
                 'ezee_id': record.get('record_id'),
                 'ezee_guest_name': record.get('reference5'),
                 'ezee_reservation_number': record.get('reference3'),
                 'ezee_folio_number': record.get('reference4'),
-                'ezee_type': record.get('reference14'), 
+                'ezee_type': record.get('reference14'),
                 'ezee_room_number': record.get('reference13'),
                 'ezee_checkin_date': self._parse_ezee_date(record.get('reference1')),
                 'ezee_checkout_date': self._parse_ezee_date(record.get('reference2')),
                 'ezee_receipt_no': record.get('reference8'), # Bill No
                 'ezee_amount': ezee_total,
             }
-
+            lines = {}
+            tax_ids = []
             for detail in record.get('detail', []):
-                
-                mapping = self.env['pms.account.mapping'].search([
-                    ('pms_account_header_id', '=', int(detail.get('reference_id')) if detail.get('reference_id') else 0),
-                ], limit=1)
-                
+                record_id = detail['detail_record_id']
+                amount = float(detail.get('amount', 0) or 0)
+                ref_name = detail.get('reference_name')
+                line_name = detail.get('charge_name') or'PMS Charge'
                 amount = self._parse_ezee_amount(detail.get('amount'))
-                if amount != 0 or detail.get('reference_name'):
-                    
+                if record_id not in lines:
+                    tax_ids = []
+                    mapping = self.env['pms.account.mapping'].search([
+                        ('pms_account_header_id', '=',
+                         int(detail.get('reference_id')) if detail.get('reference_id') else 0),
+                    ], limit=1)
                     account_id = False
                     if mapping:
                         account_id = mapping.account_id.id
@@ -116,25 +123,33 @@ class PMSSyncWizard(models.TransientModel):
                         account_id = hotel.journal_id.default_account_id.id
                     elif income_account:
                         account_id = income_account.id
-                    
-                    if account_id:
-                        
-                        line_name = detail.get('charge_name') or \
-                                    (mapping.account_id.name if mapping else False) or \
-                                    'PMS Charge'
-                        
-                        invoice_vals['invoice_line_ids'].append((0, 0, {
+                    lines[record_id] = {
                             'name': line_name,
                             'discount': 0,
                             'account_id': account_id,
                             'price_unit': amount,
                             'quantity': 1,
+                            'tax_ids':[],
                             'analytic_distribution': {str(hotel.analytic_account_id.id): 100} if hotel.analytic_account_id else {},
-                        }))
-            
-            
+                        }
+
+                if ref_name == 'Taxes':
+                    charge_name=detail.get('charge_name')
+                    tax_id = self.env['account.tax'].search([
+                        ('type_tax_use','=','sale'),
+                        ('name', '=', charge_name),
+                    ], limit=1).id
+                    tax_ids.append(tax_id)
+
+                    if tax_ids:
+                           lines[record_id]['tax_ids'].append((6, 0, tax_ids))
+
+            if lines:
+                for record_id, line_vals in lines.items():
+                    invoice_vals['invoice_line_ids'].append((0, 0, line_vals))
+
             sum_lines = sum(line[2]['price_unit'] for line in invoice_vals['invoice_line_ids'])
-            
+
             # If total doesn't match or no lines, adjust or create fallback
             # if abs(sum_lines - ezee_total) > 0.01:
             #     diff = ezee_total - sum_lines
@@ -150,7 +165,7 @@ class PMSSyncWizard(models.TransientModel):
 
             if invoice_vals['invoice_line_ids']:
                 inv = self.env['account.move'].create(invoice_vals)
-                inv.action_post()
+                # inv.action_post()
 
     def _parse_ezee_amount(self, value):
         """Robust float parsing for eZee amounts"""
@@ -199,26 +214,39 @@ class PMSSyncWizard(models.TransientModel):
     def _process_receipts(self, hotel, data):
         if not data or data.get('status') != 'Success': return
         for group in data.get('data', []):
+            type = group.get('type')
             for record in group.get('data', []):
-                
-                existing = self.env['account.move'].search([
+                existing = self.env['account.payment'].search([
                     ('pms_tran_id', '=', record['tranId']),
                     ('pms_hotel_id', '=', hotel.id),
-                    ('move_type', '=', 'out_receipt')
                 ])
                 if existing: continue
 
                 partner = self._get_or_create_partner({'reference5': record.get('reference2')})
+                journal_id = hotel.journal_id.id
+                if type == 'Advance Deposit':
+                    if record.get('reference14') == 'Cash':
+                        journal_id= self.env['account.journal'].search([('name', '=', 'PMS Advance (Cash)')], limit=1).id or journal_id
+                    else:
+                        journal_id= self.env['account.journal'].search([('name', '=', 'PMS Advance (Bank)')], limit=1).id or journal_id
+                if type == 'Received From Guest' or type == 'Received From Cityledger':
+                      if record.get('reference14') == 'Cash':
+                        journal_id= self.env['account.journal'].search([('name', '=', 'PMS Cash')], limit=1).id or journal_id
+                      else:
+                        journal_id= self.env['account.journal'].search([('name', '=', 'PMS Bank')], limit=1).id or journal_id
                 
-                move_vals = {
-                    'move_type': 'out_receipt',
+                payment_vals = {
+                    'payment_type': 'inbound',
                     'date': record['tran_datetime'],
                     'pms_tran_id': record['tranId'],
                     'pms_hotel_id': hotel.id,
                     'pms_reference': record.get('reference1'), # Receipt No
                     'journal_id': hotel.journal_id.id,
-                    'line_ids': [],
-                }
+                    'partner_id': partner.id,
+                    'payment_method': 'manual',
+                    'amount': self._parse_ezee_amount(record.get('gross_amount') or record.get('TotalAmount') or record.get('Amount')),
+                    'ezee_reservation_number': record.get('reference3'),
+                    }
 
                 total_debit = 0.0
                 total_credit = 0.0
