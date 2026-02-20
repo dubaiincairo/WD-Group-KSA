@@ -147,8 +147,6 @@ class PMSSyncWizard(models.TransientModel):
                     tax_ids.append(tax_id.id)
 
                     if tax_ids:
-                           lines[record_id]['tax_ids'].clear()
-                           tax_ids.reverse()
                            lines[record_id]['tax_ids'].append((6, 0, tax_ids))
 
             if lines:
