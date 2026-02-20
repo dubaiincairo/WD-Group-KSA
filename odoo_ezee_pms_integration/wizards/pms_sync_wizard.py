@@ -79,7 +79,7 @@ class PMSSyncWizard(models.TransientModel):
 
             ezee_total = self._parse_ezee_amount(record.get('total_amount') or record.get('TotalAmount') or record.get('Amount'))
 
-            if record.get('reference3')=='S226-03':
+            if record.get('record_id')=='S31309-03':
                 print ("IT IS")
             invoice_vals = {
                 'move_type': 'out_invoice',
@@ -140,13 +140,14 @@ class PMSSyncWizard(models.TransientModel):
                     tax_id = self.env['account.tax'].search([
                         ('type_tax_use','=','sale'),
                         ('name', '=', charge_name),
-                    ], limit=1).id
+                    ], limit=1)
                     if not tax_id:
                         raise UserError(f'Please Set Taxes for {charge_name} and Percentage {percentage}')  # pylint: disable
 
-                    tax_ids.append(tax_id)
+                    tax_ids.append(tax_id.id)
 
                     if tax_ids:
+                           lines[record_id]['tax_ids'].clear()
                            lines[record_id]['tax_ids'].append((6, 0, tax_ids))
 
             if lines:
