@@ -176,6 +176,7 @@ class PMSSyncWizard(models.TransientModel):
 
             if invoice_vals['invoice_line_ids']:
                 inv = self.env['account.move'].create(invoice_vals)
+                inv.with_context(check_move_validity=False)._recompute_dynamic_lines(recompute_all_taxes=True)
                 # inv.action_post()
 
     def _parse_ezee_amount(self, value):
