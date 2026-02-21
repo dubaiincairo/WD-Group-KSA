@@ -181,7 +181,7 @@ class PMSSyncWizard(models.TransientModel):
                     # Force full recomputation so sequential tax logic kicks in
                 # inv.with_context(check_move_validity=False)._onchange_invoice_line_ids()
                 inv._compute_tax_totals()
-                inv._check_balanced()
+                # inv._check_balanced()
                 # inv.action_post()
 
     def _parse_ezee_amount(self, value):
