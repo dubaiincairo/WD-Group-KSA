@@ -135,24 +135,30 @@ class PMSSyncWizard(models.TransientModel):
                         }
 
                 if ref_name == 'Taxes':
-                    charge_name=detail.get('charge_name')
-                    percentage = detail.get('taxper')
+                    charge_name = detail.get('charge_name')
                     tax_id = self.env['account.tax'].search([
-                        ('type_tax_use','=','sale'),
+                        ('type_tax_use', '=', 'sale'),
                         ('name', '=', charge_name),
                     ], limit=1)
-                    if not tax_id:
-                        raise UserError(f'Please Set Taxes for {charge_name} and Percentage {percentage}')  # pylint: disable
-
-                    tax_ids.append(tax_id.id)
-
-                    if tax_ids:
-                           lines[record_id]['tax_ids'].append((6, 0, tax_ids))
+                    
+                    if tax_id:
+                        # أضف المعرف للمصفوفة الخاصة بهذا السطر
+                        if tax_id.id not in lines[record_id]['tax_ids']:
+                            lines[record_id]['tax_ids'].append(tax_id.id)
 
             if lines:
                 for record_id, line_vals in lines.items():
+                    if line_vals['tax_ids']:
+                        # نقوم بجلب الضرائب وترتيبها حسب الـ Sequence الموجود في إعدادات أودو
+                        # إذا كنت وضعت الـ 15% بـ sequence أقل (مثلاً 5) والـ 2.5% بـ sequence (مثلاً 10)
+                        # فإن أودو سيطبقها بالترتيب الصحيح
+                        ordered_taxes = self.env['account.tax'].browse(line_vals['tax_ids']).sorted(key=lambda t: t.sequence)
+                        
+                        # نضع الضرائب المرتبة في سطر الفاتورة
+                        line_vals['tax_ids'] = [(6, 0, ordered_taxes.ids)]
+                    
                     invoice_vals['invoice_line_ids'].append((0, 0, line_vals))
-
+                    
             sum_lines = sum(line[2]['price_unit'] for line in invoice_vals['invoice_line_ids'])
 
             # If total doesn't match or no lines, adjust or create fallback
