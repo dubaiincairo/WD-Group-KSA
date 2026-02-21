@@ -179,7 +179,7 @@ class PMSSyncWizard(models.TransientModel):
             if invoice_vals['invoice_line_ids']:
                 inv = self.env['account.move'].create(invoice_vals)
                     # Force full recomputation so sequential tax logic kicks in
-                inv.with_context(check_move_validity=False)._onchange_invoice_line_ids()
+                # inv.with_context(check_move_validity=False)._onchange_invoice_line_ids()
                 inv._compute_tax_totals()
                 inv._check_balanced()
                 # inv.action_post()
