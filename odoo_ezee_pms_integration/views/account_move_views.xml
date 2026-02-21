@@ -15,6 +15,8 @@
                     <field name="pms_tran_id" readonly="1" nolabel="1"/>
                     <label for="pms_reference" string="Reference"/>
                     <field name="pms_reference" readonly="1" nolabel="1"/>
+                    <label for="ezee_folio_number" string="Folio Number"/>
+                    <field name="ezee_folio_number" readonly="1" nolabel="1"/>
                 </group>
             </xpath>
             
