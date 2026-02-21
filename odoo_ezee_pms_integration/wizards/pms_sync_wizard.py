@@ -142,6 +142,8 @@ class PMSSyncWizard(models.TransientModel):
                     ], limit=1)
                     
                     if tax_id:
+                        if not tax_id.include_base_amount:
+                            tax_id.include_base_amount = True  # or fix it in UI
                         # أضف المعرف للمصفوفة الخاصة بهذا السطر
                         if tax_id.id not in lines[record_id]['tax_ids']:
                             lines[record_id]['tax_ids'].append(tax_id.id)
@@ -176,7 +178,10 @@ class PMSSyncWizard(models.TransientModel):
 
             if invoice_vals['invoice_line_ids']:
                 inv = self.env['account.move'].create(invoice_vals)
+                    # Force full recomputation so sequential tax logic kicks in
+                inv.with_context(check_move_validity=False)._onchange_invoice_line_ids()
                 inv._compute_tax_totals()
+                inv._check_balanced()
                 # inv.action_post()
 
     def _parse_ezee_amount(self, value):
