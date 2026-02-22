@@ -18,7 +18,7 @@ class AccountMove(models.Model):
     ezee_checkout_date = fields.Date(string='Check-Out Date', readonly=True, copy=False)
     ezee_receipt_no = fields.Char(string='Receipt No', readonly=True, copy=False)
     ezee_amount = fields.Float(string='Amount', readonly=True, copy=False)
-
+    is_sale_installed = fields.Boolean()
     _sql_constraints = [
         ('pms_tran_id_unique', 'unique(pms_tran_id, pms_hotel_id, move_type)', 'PMS Transaction ID must be unique per hotel and type!')
     ]

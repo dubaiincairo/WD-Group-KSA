@@ -13,7 +13,7 @@
         - Incidental Invoices
     """,
     'author': 'WD-Group',
-    'depends': ['account', 'analytic'],
+    'depends': ['base','account', 'analytic'],
     'data': [
         'security/ir.model.access.csv',
         'data/ir_cron_data.xml',
@@ -25,6 +25,7 @@
         'views/account_payment_views.xml',
         'wizards/pms_sync_wizard_views.xml',
         'views/pms_menus.xml',
+        'views/res_company_views.xml'
     ],
     'installable': True,
     'application': True,

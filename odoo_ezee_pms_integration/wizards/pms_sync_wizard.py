@@ -30,16 +30,84 @@ class PMSSyncWizard(models.TransientModel):
             
             if self.sync_sales:
                 data = service.fetch_data('sales', self.from_date, self.to_date)
-                self._process_sales(hotel, data)
+                result = self._process_sales(hotel, data)
+                if result == "Failed":
+                    return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Sales Failed',
+                    'message': 'Check Sync Logs for details.',
+                    'type': 'danger',
+                    'sticky': True,
+                }
+            }
+                else:
+                   return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Sales Successes ',
+                    'message': 'Sales pulled',
+                    'type': 'success',
+                    'sticky': False,
+                    'next': {'type': 'ir.actions.act_window_close'},
+                }
+            }
             
             if self.sync_receipts:
                 data = service.fetch_data('receipt', self.from_date, self.to_date)
-                self._process_receipts(hotel, data)
+                result = self._process_receipts(hotel, data)
+                if result == "Failed":
+                    return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Receipts Failed',
+                    'message': 'Check Sync Logs for details.',
+                    'type': 'danger',
+                    'sticky': True,
+                }
+            }
+                else:
+                   return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Receipts Successes ',
+                    'message': 'Receipts pulled',
+                    'type': 'success',
+                    'sticky': False,
+                    'next': {'type': 'ir.actions.act_window_close'},
+                }
+            }
 
             if self.sync_payments:
                 data = service.fetch_data('payment', self.from_date, self.to_date)
-                self._process_payments(hotel, data)
-
+                result = self._process_payments(hotel, data)
+                if result == "Failed":
+                    return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Payment Failed',
+                    'message': 'Check Sync Logs for details.',
+                    'type': 'danger',
+                    'sticky': True,
+                }
+            }
+                else:
+                   return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Payment Successes ',
+                    'message': 'Payment pulled',
+                    'type': 'success',
+                    'sticky': False,
+                    'next': {'type': 'ir.actions.act_window_close'},
+                }
+            }
             if self.sync_journals:
                 data = service.fetch_data('journal', self.from_date, self.to_date)
                 self._process_journals(hotel, data)
@@ -50,9 +118,10 @@ class PMSSyncWizard(models.TransientModel):
        
 
     def _process_sales(self, hotel, data):
-        if not data: return
+        if not data: return "Failed"
         
-        
+        company= self.env['res.company'].search([('hotel_id', '=', hotel.id)], limit=1)
+
         records = data.get('data', []) if isinstance(data, dict) else data
         if not records or not isinstance(records, list): return
 
@@ -90,8 +159,7 @@ class PMSSyncWizard(models.TransientModel):
                 'pms_reference': record.get('reference3'), # Reservation No
                 'journal_id': hotel.journal_id.id,
                 'invoice_line_ids': [],
-
-
+                'company_id': company.id if company else self.env.company.id,
                 'ezee_id': record.get('record_id'),
                 'ezee_guest_name': record.get('reference5'),
                 'ezee_reservation_number': record.get('reference3'),
@@ -183,7 +251,7 @@ class PMSSyncWizard(models.TransientModel):
                 inv._compute_tax_totals()
                 # inv._check_balanced()
                 # inv.action_post()
-
+        return "Success"
     def _parse_ezee_amount(self, value):
         """Robust float parsing for eZee amounts"""
         if not value:
@@ -229,7 +297,8 @@ class PMSSyncWizard(models.TransientModel):
         return partner
 
     def _process_receipts(self, hotel, data):
-        if not data or data.get('status') != 'Success': return
+        company= self.env['res.company'].search([('hotel_id', '=', hotel.id)], limit=1)
+        if not data or data.get('status') != 'Success': return "Failed"
         for group in data.get('data', []):
             type = group.get('type')
             for record in group.get('data', []):
@@ -240,177 +309,95 @@ class PMSSyncWizard(models.TransientModel):
                 if existing: continue
 
                 partner = self._get_or_create_partner({'reference5': record.get('reference2')})
-                journal_id = hotel.journal_id.id
+                journal_id = hotel.journal_id
                 if type == 'Advance Deposit':
-                    if record.get('reference14') == 'Cash':
-                        journal_id= self.env['account.journal'].search([('name', '=', 'PMS Advance (Cash)')], limit=1).id or journal_id
+                    if 'Cash' in record.get('reference14') :
+                        journal_id= self.env['account.journal'].search([('name', '=', 'Cash')], limit=1) or journal_id
                     else:
-                        journal_id= self.env['account.journal'].search([('name', '=', 'PMS Advance (Bank)')], limit=1).id or journal_id
+                        journal_id= self.env['account.journal'].search([('name', '=', 'Bank')], limit=1) or journal_id
                 if type == 'Received From Guest' or type == 'Received From Cityledger':
-                      if record.get('reference14') == 'Cash':
-                        journal_id= self.env['account.journal'].search([('name', '=', 'PMS Cash')], limit=1).id or journal_id
-                      else:
-                        journal_id= self.env['account.journal'].search([('name', '=', 'PMS Bank')], limit=1).id or journal_id
-                
+                       if 'Cash' in record.get('reference14') :
+                        journal_id= self.env['account.journal'].search([('name', '=', 'Cash')], limit=1) or journal_id
+                       else:
+                        journal_id= self.env['account.journal'].search([('name', '=', 'Bank')], limit=1) or journal_id
+                payment_method_line = (
+                        journal_id._get_available_payment_method_lines('inbound')[:1]
+                        or journal_id.inbound_payment_method_line_ids[:1]
+                )
                 payment_vals = {
                     'payment_type': 'inbound',
+                    'company_id': company.id if company else self.env.company.id,
+                    'partner_type': 'customer',
                     'date': record['tran_datetime'],
                     'pms_tran_id': record['tranId'],
                     'pms_hotel_id': hotel.id,
                     'pms_reference': record.get('reference1'), # Receipt No
-                    'journal_id': hotel.journal_id.id,
+                    'journal_id': journal_id.id if journal_id else hotel.journal_id.id,
                     'partner_id': partner.id,
-                    'payment_method': 'manual',
+                    'payment_method_line_id': payment_method_line.id,
                     'amount': self._parse_ezee_amount(record.get('gross_amount') or record.get('TotalAmount') or record.get('Amount')),
                     'ezee_reservation_number': record.get('reference3'),
                     }
 
-                total_debit = 0.0
-                total_credit = 0.0
-                for detail in record.get('detail', []):
-                    mapping = self.env['pms.account.mapping'].search([
-                        ('hotel_id', '=', hotel.id),
-                        '|',
-                        ('pms_account_id', '=', str(detail.get('reference_id'))),
-                        ('pms_account_name', '=', detail.get('reference_value'))
-                    ], limit=1)
-                    account_id = mapping.account_id.id if mapping else None
-                    if not account_id:
-                        continue
-
-                    amount = float(detail.get('amount', 0))
-                    
-                    debit = amount if detail.get('tran_type') == 'Cr' else 0.0
-                    credit = amount if detail.get('tran_type') == 'Dr' else 0.0
-
-                    move_vals['line_ids'].append((0, 0, {
-                        'name': detail.get('reference_value') or 'PMS Receipt',
-                        'partner_id': partner.id,
-                        'account_id': account_id,
-                        'debit': debit,
-                        'credit': credit,
-                        'analytic_distribution': {str(hotel.analytic_account_id.id): 100} if hotel.analytic_account_id else {},
-                    }))
-                    total_debit += debit
-                    total_credit += credit
-                
-                if move_vals['line_ids'] and abs(total_debit - total_credit) > 0.01:
-                    diff = total_debit - total_credit
-                    receivable_account = partner.property_account_receivable_id or self.env['account.account'].search([
-                        ('account_type', '=', 'asset_receivable'),
-                        ('company_id', '=', self.env.company.id)
-                    ], limit=1)
-                    if receivable_account:
-                        move_vals['line_ids'].append((0, 0, {
-                            'name': 'PMS Receipt Balancing',
-                            'partner_id': partner.id,
-                            'account_id': receivable_account.id,
-                            'debit': -diff if diff < 0 else 0.0,
-                            'credit': diff if diff > 0 else 0.0,
-                            'analytic_distribution': {str(hotel.analytic_account_id.id): 100} if hotel.analytic_account_id else {},
-                        }))
-                
-                if move_vals['line_ids']:
-                    
-                    move_vals['move_type'] = 'entry'
-                    self.env['account.move'].create(move_vals).action_post()
+                payment = self.env['account.payment'].create(payment_vals)
+                # payment.post()
+        return "Success"
 
     def _process_payments(self, hotel, data):
-        if not data or data.get('status') != 'Success': 
-            return
-
+        company = self.env['res.company'].search([('hotel_id', '=', hotel.id)], limit=1)
+        if not data or data.get('status') != 'Success':
+            return "Failed"
         for group in data.get('data', []):
-            group_type = group.get('type')
+            type = group.get('type')
             for record in group.get('data', []):
-                payment_created = False
-                for detail in record.get('detail', []):
-                    # Skip balancing lines to Guest Ledger
-                    if detail.get('reference_id') == 8 or detail.get('reference_value') == 'Guest Ledger':
-                        continue
+                existing = self.env['account.payment'].search([
+                    ('pms_tran_id', '=', record['tranId']),
+                    ('pms_hotel_id', '=', hotel.id),
+                ])
+                if existing: continue
 
-                    # Unique ID per payment line to support split payments correctly
-                    
-                    pms_payment_id = f"{record['tranId']}_{detail.get('detailId', '0')}"
-                    
-                    existing = self.env['account.payment'].search([
-                        ('pms_tran_id', '=', pms_payment_id),
-                        ('pms_hotel_id', '=', hotel.id),
-                    ], limit=1)
-                    
-                    if not existing:
-                        
-                        existing = self.env['account.payment'].search([
-                            ('pms_tran_id', '=', record['tranId']),
-                            ('pms_hotel_id', '=', hotel.id),
-                        ], limit=1)
+                partner = self._get_or_create_partner({'reference5': record.get('reference2')})
+                journal_id = hotel.journal_id
+                if type == 'General Expense':
+                    if 'Cash' in record.get('reference14'):
+                        journal_id = self.env['account.journal'].search([('name', '=', 'Cash')], limit=1) or journal_id
+                    else:
+                        journal_id = self.env['account.journal'].search([('name', '=', 'Bank')], limit=1) or journal_id
+                if type == 'Advance Deposit Refund':
+                    if 'Cash' in record.get('reference14'):
+                        journal_id = self.env['account.journal'].search([('name', '=', 'Cash')], limit=1) or journal_id
+                    else:
+                        journal_id = self.env['account.journal'].search([('name', '=', 'Bank')], limit=1) or journal_id
 
-                    if existing:
-                        _logger.debug("Payment %s already exists, skipping", pms_payment_id)
-                        payment_created = True # Mark as "handled"
-                        continue
+                if type == 'Guest Refund' or type == 'Cityledger Refund':
+                    if 'Cash' in record.get('reference14'):
+                        journal_id = self.env['account.journal'].search([('name', '=', 'Cash')], limit=1) or journal_id
+                    else:
+                        journal_id = self.env['account.journal'].search([('name', '=', 'Bank')], limit=1) or journal_id
+                payment_method_line = (
+                        journal_id._get_available_payment_method_lines('outbound')[:1]
+                        or journal_id.inbound_payment_method_line_ids[:1]
+                )
+                payment_vals = {
+                    'payment_type': 'outbound',
+                    'company_id': company.id if company else self.env.company.id,
+                    'partner_type': 'supplier',
+                    'date': record['tran_datetime'],
+                    'pms_tran_id': record['tranId'],
+                    'pms_hotel_id': hotel.id,
+                    'pms_reference': record.get('reference1'),  # Receipt No
+                    'journal_id': journal_id.id if journal_id else hotel.journal_id.id,
+                    'partner_id': partner.id,
+                    'payment_method_line_id': payment_method_line.id,
+                    'amount': self._parse_ezee_amount(
+                        record.get('gross_amount') or record.get('TotalAmount') or record.get('Amount')),
+                    'ezee_reservation_number': record.get('reference3'),
+                }
 
-                    mapping = self.env['pms.payment.mapping'].search([
-                        ('hotel_id', '=', hotel.id),
-                        '|', '|',
-                        ('pms_payment_id', '=', str(detail.get('sub_reference2_value'))),
-                        ('pms_payment_type', '=', detail.get('reference_value')),
-                        ('pms_payment_type', '=', record.get('reference14'))
-                    ], limit=1)
-                    
-                    if not mapping or not mapping.journal_id:
-                        _logger.warning("No mapping found for PMS Payment. Details: ID=%s, Value=%s, Header=%s. Record: %s", 
-                                       detail.get('sub_reference2_value'), detail.get('reference_value'), record.get('reference14'), record['tranId'])
-                        continue
+                payment = self.env['account.payment'].create(payment_vals)
+                # payment.post()
+        return "Success"
 
-                    amount = float(detail.get('amount', 0))
-                    if amount <= 0:
-                        continue
-
-                    is_refund = group_type in ['Guest Refund', 'Advance Deposit Refund', 'Cityledger Refund']
-                    payment_type = 'outbound' if is_refund else ('inbound' if detail.get('tran_type') == 'Cr' else 'outbound')
-                    
-                    partner = self._get_or_create_partner({
-                        'reference5': record.get('reference2'),
-                        'reference19': record.get('reference19'),
-                    })
-
-                    method_lines = mapping.journal_id.inbound_payment_method_line_ids if payment_type == 'inbound' else mapping.journal_id.outbound_payment_method_line_ids
-                    payment_method_line = method_lines.filtered(lambda l: l.code == 'manual')[:1] or method_lines[:1]
-
-                    payment_vals = {
-                        'payment_type': payment_type,
-                        'partner_type': 'customer',
-                        'partner_id': partner.id,
-                        'amount': amount,
-                        'date': self._parse_ezee_date(record.get('tran_datetime')) or fields.Date.today(),
-                        'journal_id': mapping.journal_id.id,
-                        'payment_method_line_id': payment_method_line.id if payment_method_line else False,
-                        'pms_tran_id': pms_payment_id,
-                        'pms_hotel_id': hotel.id,
-                        'pms_reference': record.get('reference1'),
-                        
-                        'ezee_id': record.get('tranId'),
-                        'ezee_guest_name': record.get('reference2'),
-                        'ezee_type': detail.get('reference_value') or record.get('reference14'),
-                        'ezee_amount': amount,
-                        'ezee_reservation_number': record.get('reference3'),
-                        'ezee_folio_number': record.get('reference4'),
-                        'ezee_room_number': record.get('reference13'),
-                        'ezee_checkin_date': self._parse_ezee_date(record.get('reference8')),
-                        'ezee_checkout_date': self._parse_ezee_date(record.get('reference9')),
-                        'ezee_receipt_no': record.get('reference1'),
-                    }
-                    
-                    try:
-                        payment = self.env['account.payment'].create(payment_vals)
-                        payment.action_post()
-                        payment_created = True
-                        _logger.info("Sync: Created Odoo payment %s for PMS %s", payment.name, pms_payment_id)
-                    except Exception as e:
-                        _logger.error("Sync Error: Failed to create payment for PMS %s: %s", pms_payment_id, str(e))
-                
-                if not payment_created:
-                    _logger.debug("No payment detail processed for record %s", record['tranId'])
 
     def _process_journals(self, hotel, data):
         if not data or data.get('status') != 'Success': return
