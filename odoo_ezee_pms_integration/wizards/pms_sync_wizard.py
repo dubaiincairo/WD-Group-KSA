@@ -170,6 +170,25 @@ class PMSSyncWizard(models.TransientModel):
                 'ezee_checkout_date': self._parse_ezee_date(record.get('reference2')),
                 'ezee_receipt_no': record.get('reference8'), # Bill No
                 'ezee_amount': ezee_total,
+                'ezee_rate_plan': record.get('reference6'),
+                'ezee_source': record.get('reference7'),   
+                'ezee_rate_type': record.get('reference15'),
+                'ezee_market': record.get('reference16'),
+                'ezee_company_tax_id': record.get('reference17'),
+                'ezee_tax_number': record.get('reference18'),
+                'ezee_bill_name': record.get('reference9'),
+                'ezee_voucher_no': record.get('reference10'),
+                'ezee_bill_No': record.get('reference8'),
+                'ezee_email': record.get('reference19'),
+                'ezee_address': record.get('reference22'),
+                'ezee_address_line': record.get('reference20'),
+                'ezee_address1': record.get('reference23'),
+                'ezee_address2': record.get('reference24'),
+                'ezee_address_line2': record.get('reference21'),
+                'ezee_address3': record.get('reference25'),
+                'ezee_country': record.get('reference26'),
+                'ezee_registration_no': record.get('reference27'),
+                'ezee_booking_no': record.get('reference29'),
             }
             lines = {}
             tax_ids = []
@@ -340,7 +359,31 @@ class PMSSyncWizard(models.TransientModel):
                     }
 
                 payment = self.env['account.payment'].create(payment_vals)
-                # payment.post()
+                payment.action_post()
+                payment.action_validate()
+                mapping_name = None
+                if type == 'Advance Deposit':
+                    mapping_name = 'Advance From Guest'
+                elif type == 'Received From Guest':
+                    mapping_name = 'Guest Ledger'
+                elif type == 'Received From Cityledger':
+                    mapping_name = 'City Ledger'
+
+                if mapping_name:
+                    mapping = self.env['pms.account.mapping'].search([
+                        ('pms_account_header_name', '=', mapping_name),
+                        
+                    ], limit=1)
+                    if mapping and mapping.account_id:
+                        debit_line = payment.move_id.line_ids.filtered(
+                            lambda l: l.debit > 0
+                        )[:1]
+                        if debit_line:
+                            debit_line.with_context(check_move_validity=False).write({
+                                'account_id': mapping.account_id.id,
+                            })
+                            payment.move_id.with_context(check_move_validity=False)._synchronize_business_models(['line_ids'])
+        
         return "Success"
 
     def _process_payments(self, hotel, data):
@@ -395,7 +438,31 @@ class PMSSyncWizard(models.TransientModel):
                 }
 
                 payment = self.env['account.payment'].create(payment_vals)
-                # payment.post()
+                payment.action_post()
+                payment.action_validate()
+                mapping_name = None
+                if type == 'Advance Deposit Refund':
+                    mapping_name = 'Advance From Guest'
+                elif type == 'Guest Refund':
+                    mapping_name = 'Guest Ledger'
+                elif type == 'Cityledger Refund':
+                    mapping_name = 'City Ledger'
+                elif type == 'General Expense':
+                    mapping_name = 'Paid Out'
+                if mapping_name:
+                    mapping = self.env['pms.account.mapping'].search([
+                        ('pms_account_header_name', '=', mapping_name),
+                    ], limit=1)
+                    if mapping and mapping.account_id:
+                        credit_line = payment.move_id.line_ids.filtered(
+                            lambda l: l.credit > 0
+                        )[:1]
+                        if credit_line:
+                            credit_line.with_context(check_move_validity=False).write({
+                                'account_id': mapping.account_id.id,
+                            })
+                            payment.move_id.with_context(check_move_validity=False)._synchronize_business_models(['line_ids'])
+       
         return "Success"
 
 

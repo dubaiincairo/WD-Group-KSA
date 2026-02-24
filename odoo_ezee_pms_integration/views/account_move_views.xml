@@ -38,9 +38,41 @@
                         </group>
                     </group>
                     <group>
-                        <group string="Transaction Details">
+                        <group string="Transaction and Rate Details">
                             <field name="ezee_receipt_no"/>
                             <field name="ezee_amount"/>
+                            <field name="ezee_rate_plan"/>
+                            <field name="ezee_source"/>
+                            <field name="ezee_rate_type"/>
+                            <field name="ezee_market"/>
+                        </group>
+                        <group string="Bill and Voucher Information">
+                            <field name="ezee_bill_No"/>
+                            <field name="ezee_bill_name"/>
+                            <field name="ezee_voucher_no"/>
+                            <field name="ezee_voucher_name"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Tax Information">
+                            <field name="ezee_company_tax_id"/>
+                            <field name="ezee_tax_number"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Address Information">
+                            <field name="ezee_email"/>
+                            <field name="ezee_address"/>
+                            <field name="ezee_address_line"/>
+                            <field name="ezee_address1"/>
+                            <field name="ezee_address2"/>
+                            <field name="ezee_address_line2"/>
+                            <field name="ezee_address3"/>
+                            <field name="ezee_country"/>
+                        </group>
+                        <group string="Registration and Booking">
+                            <field name="ezee_registration_no"/>
+                            <field name="ezee_booking_no"/>
                         </group>
                     </group>
                 </page>
